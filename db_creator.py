@@ -1,6 +1,7 @@
 # This DB is based on the open source data provided in the following datasets:
 # https://www.kaggle.com/rounakbanik/the-movies-dataset
 # https://www.kaggle.com/theacademy/academy-awards
+# https://www.kaggle.com/stefanoleone992/imdb-extensive-dataset?select=IMDb+names.csv
 # and on this API:
 # https://rapidapi.com/SAdrian/api/data-imdb1/
 
