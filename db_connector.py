@@ -1,10 +1,10 @@
 import mysql.connector
 
 mydb = mysql.connector.connect(
-  host="mysqlsrv1.cs.tau.ac.il",
+  host="localhost",
   user="DbMysql15", # need to change
   password="DbMysql15", # need to change
   database="DbMysql15",
-  port="3306",
+  port="3305",
   raise_on_warnings=True
 )
