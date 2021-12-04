@@ -7,13 +7,13 @@ import mysql.connector
 
 mydb = mysql.connector.connect(
   host="mysqlsrv1.cs.tau.ac.il",
-  user="yourusername", # need to change
-  password="yourpassword" # need to change
+  user="DbMysql15", # need to change
+  password="DbMysql15" # need to change
 )
 
 mycursor = mydb.cursor()
 
-mycursor.execute("CREATE DATABASE movies_db")
+mycursor.execute("CREATE DATABASE DbMysql15")
 
 
 ###############################  HOW TO CREATE THE DB  #################################
