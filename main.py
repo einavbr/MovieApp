@@ -1,31 +1,25 @@
-from tmdbv3api import TMDb, Genre, Movie
-from table_create_utils import insert_imdb_rating, insert_movie_with_imdb_data, insert_movie, insert_genres, insert_movie_genres, insert_actors, insert_movie_actors
-from imdb_movie import IMDBMovie
+from movie_query import MovieQuery
+from connector import Connector
 
-TABLE_PATH_PREFIX = '/Users/einavb/tauProjects/DBServices/'
+db_con = Connector()
+query = MovieQuery(db_con)
 
-# create an instance of the TMDb class
-tmdb = TMDb()
-tmdb.api_key = "6c5d2522091c508a9bca48690c7fdf13"
-# create instances of TMDb objects
-movie = Movie()
-genre = Genre()
+def parse_list_input(str_input):
+    lst = str_input.split(",")
+    lst = [item.strip().lower() for item in lst]
+    return lst
 
-insert_genres(genre)
+# actors_str = input("Which actors would you like to employ? Enter a comma seperated list: ")
+# actors = actors_str.split(",")
+# actors = [name.strip().lower() for name in actors]
 
-for i in range(1,120):
-    print(i)
-    popular = movie.popular(i)
-    for p in popular:
-        imdb_movie = IMDBMovie(p.title)
-        try:
-            insert_imdb_rating(imdb_movie)
-            insert_movie_with_imdb_data(p, imdb_movie)
-        except Exception:
-            # movie doesn't exist in IMDb database or wrong match to imdbId
-            print("Movie not found")
-            insert_movie(p)
-        insert_movie_genres(p)
-        response = movie.credits(p.id)
-        insert_actors(response['cast'])
-        insert_movie_actors(p.id, response['cast'])
+genres_str = input("Which Genres will your movie be? Enter a comma seperated list: ")
+genres = parse_list_input(genres_str)
+
+actors_str = input("Which actors would you like to employ? Enter a comma seperated list: ")
+actors = parse_list_input(actors_str)
+
+# query.predict_by_actors(actors)
+query.predict_by_actors_and_genres(actors, genres)
+
+db_con.close()
