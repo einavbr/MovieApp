@@ -25,3 +25,12 @@ Our app will allow script writers to conduct a POC for their movie, provided dif
 5. Predicted actors who would want to participate - actors that are the top participants in the movie's genre
 6. Language best to produce the movie in - 
 7. Locations best to film the movie in - 
+
+## Ways we optimized the code:
+- Query for most popular movies
+- indexes on actor names and genres
+- Use aggregated functions where possible
+- Use small varchars where possible
+
+## Other notes:
+- Used views for readability and preventing code duplication
