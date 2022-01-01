@@ -1,55 +1,42 @@
+from rating_predictor import RatingPredictor
+from actors_predictor import ActorsPredictor
+from similarity_calculator import SimilarityCalculator
+from language_calculator import LanguageCalculator
+from cast_originality_calculator import CastOriginalityCalculator
 from movie_query import MovieQuery
 from connector import Connector
 
 db_con = Connector()
 query = MovieQuery(db_con)
 
-def parse_list_input(str_input):
-    lst = str_input.split(",")
-    lst = [item.strip().lower() for item in lst]
-    return lst
+what_to_predict = """
+Welcome to MovieApp! The best app in the world for your movie POCs.
 
-# Handle actors input
-actors_str = input("Which actors would you like to employ? Enter a comma seperated list: ")
+What would you like to predict today?
+1 - I have an idea for a movie and I want to predict it's rating
+2 - I want to know which actors would want to participate in my movie
+3 - I have an idea for a movie and I want to know which similar movies have been created
+4 - I want to know which languages I can make my movie in
+5 - I want to know if my cast is original
+6 - HELP! I don't have an idea. Show me the most popular movies in your DB
 
-# Handle genres input
-genres_str = input("Which Genres will your movie be? Enter a comma seperated list: ")
+"""
 
+navigate = input(what_to_predict)
 
-# Handle keywords input
-keywords = input("Enter Keywords that would be in your movie's overview?")
-
-# Map to correct query
-result = ""
-if (len(actors_str) > 0 and len(genres_str) > 0 and len(keywords) > 0):
-    actors = parse_list_input(actors_str)
-    genres = parse_list_input(genres_str)
-    # TODO: create predict_by_actors_genres_keywords func
-    pass
-elif (len(actors_str) > 0 and len(genres_str) > 0):
-    actors = parse_list_input(actors_str)
-    genres = parse_list_input(genres_str)
-    result = query.predict_by_actors_and_genres(actors, genres)
-elif (len(actors_str) > 0 and len(keywords) > 0):
-    actors = parse_list_input(actors_str)
-    # TODO: create predict_by_actors_and_keywords func
-    pass
-elif (len(genres_str) > 0 and len(keywords) > 0):
-    genres = parse_list_input(genres_str)
-    # TODO: create predict_by_genres_and_keywords func
-    pass
-elif (len(actors_str) > 0):
-    actors = parse_list_input(actors_str)
-    result = query.predict_by_actors(actors)
-elif (len(genres_str) > 0):
-    genres = parse_list_input(genres_str)
-    result = query.predict_by_genres(genres)
-elif (len(keywords) > 0):
-    result = query.predict_by_keywords(keywords)
-
-if result is not None:
-    print(result)
-else:
-    print("No such movies found")
+if navigate == '1': 
+    RatingPredictor(query)
+elif navigate == '2': 
+    ActorsPredictor(query)
+elif navigate == '3':
+    SimilarityCalculator(query)
+elif navigate == '4':
+    LanguageCalculator(query)
+elif navigate == '5':
+    CastOriginalityCalculator(query)
+elif navigate == '6':
+    query_pop_view = "select * from top50_movies"
+    query.execute_query(query_pop_view)
+    print(db_con.cursor.fetchall())
 
 db_con.close()

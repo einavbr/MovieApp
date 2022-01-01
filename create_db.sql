@@ -12,41 +12,29 @@ CREATE TABLE IF NOT EXISTS movies_actors (movie_id INT, FOREIGN KEY(movie_id) RE
 ;
 CREATE FULLTEXT INDEX overview_index ON movies(overview)
 ;
--- CREATE VIEW top50_actors AS
--- 	SELECT id, popularity
---     from actors
--- 	order by popularity desc
---     limit 50
--- ;
--- CREATE VIEW top50_movies AS
--- 	SELECT id, popularity
---     from movies
--- 	order by popularity desc
---     limit 50
--- ;
+CREATE INDEX actors_index ON actors (actor_name)
+;
+CREATE INDEX genres_index ON genres (genre)
+;
+CREATE VIEW top50_movies AS
+	SELECT title
+    from movies
+	order by popularity desc
+    limit 50
+;
+show full tables
+;
 -- SELECT concat('DROP TABLE IF EXISTS `', table_name, '`;')
 -- FROM information_schema.tables
 -- WHERE table_schema = 'DbMysql15';
 -- ;
-SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS `genres`;
-DROP TABLE IF EXISTS `movies`;
-DROP TABLE IF EXISTS `actors`;
-DROP TABLE IF EXISTS `movies_genres`;
-DROP TABLE IF EXISTS `movies_actors`;
-DROP TABLE IF EXISTS `imdb_ratings`;
-DROP TABLE IF EXISTS `purchases`;
-SET FOREIGN_KEY_CHECKS = 1;
-;
-show tables
-;
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- DROP TABLE IF EXISTS `genres`;
+-- DROP TABLE IF EXISTS `movies`;
+-- DROP TABLE IF EXISTS `actors`;
+-- DROP TABLE IF EXISTS `movies_genres`;
+-- DROP TABLE IF EXISTS `movies_actors`;
+-- DROP TABLE IF EXISTS `imdb_ratings`;
+-- DROP TABLE IF EXISTS `purchases`;
+-- SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO imdb_ratings (movie_id, rating) VALUES (123456, Null)
-;
-INSERT INTO imdb_ratings (movie_id) VALUES (123456)
-;
-
-select * from movies_genres
-;
-
-select * from movies
