@@ -5,10 +5,17 @@ class MovieQuery():
         self.db_con = db_con
 
     ###  ------------------------- Private methods -------------------------------- ###
-    def __alter_movie_ids_view(self, query, args = None):
+
+    def __execute_query(self, query, args = None):
         self.db_con.cursor.execute(query, args)
         self.db_con.conn.commit()
-    
+
+    def __format_rating_response(self, response):
+        try:
+            return round(float(response[0][0]), 2)
+        except IndexError:
+            return None
+
     def __alter_movie_ids_view_by_actors(self, actors):
         where = self.__create_where_clause(actors, "actor_name")
         # Get a list of all movies with all these actors
@@ -20,7 +27,7 @@ class MovieQuery():
             WHERE " + where + \
             "GROUP BY ma.movie_id \
             HAVING count(distinct ma.actor_id) >= %s"
-        self.__alter_movie_ids_view(get_movie_ids_query, [len(actors)])
+        self.__execute_query(get_movie_ids_query, [len(actors)])
     
     def __alter_movie_ids_view_by_genres(self, genres):
         where = self.__create_where_clause(genres, "genre")
@@ -33,7 +40,7 @@ class MovieQuery():
             WHERE " + where + \
             " GROUP BY mg.movie_id \
             HAVING count(distinct mg.genre_id) >= %s"
-        self.__alter_movie_ids_view(get_movie_ids_query, [len(genres)])
+        self.__execute_query(get_movie_ids_query, [len(genres)])
     
     def __get_movie_ids_view_results(self, view_name):
         self.db_con.cursor.execute("SELECT * FROM %s" % view_name)
@@ -58,9 +65,7 @@ class MovieQuery():
             " )"
         self.db_con.cursor.execute(get_avg_rating_query)
         try:
-            avg_rating = round(float(self.db_con.cursor.fetchall()[0][0]), 2)
-            print(avg_rating)
-            return avg_rating
+            return self.__format_rating_response(self.db_con.cursor.fetchall())
         except TypeError:
             print("No movies with this combination")
             return None
@@ -72,13 +77,7 @@ class MovieQuery():
             query = "SELECT popularity FROM actors WHERE lower(actor_name) like %s"
             self.db_con.cursor.execute(query, [actor])
             this_result = self.db_con.cursor.fetchall()
-            try:
-                rating = round(float(this_result[0][0]), 2)
-                print(rating)
-                return rating
-            except IndexError:
-                print("%s not found" % actor)
-                return None
+            return self.__format_rating_response(this_result)
 
     def predict_by_actors(self, actors):
         self.__alter_movie_ids_view_by_actors(actors)
@@ -100,8 +99,30 @@ class MovieQuery():
             FROM genre_movie_ids as g
             JOIN actor_movie_ids as a
             ON g.movie_id = a.movie_id"""
-        self.__alter_movie_ids_view(query)
+        self.__execute_query(query)
 
         rating = self.__get_avg_rating("movie_ids")
-        print(rating)
         return rating
+    
+    def predict_by_keywords(self, keywords):
+        query = f"""
+        select distinct sum(rating * (match_score/ sum_scores)) over() as weighted_avg_rating
+        from (
+            select movie_id,
+                rating,
+                match_score,
+                sum(match_score) over () as sum_scores
+            from (
+                select m.movie_id,
+                    overview,
+                    rating,
+                    match(overview) against ("{keywords}") as match_score
+                from movies as m
+                left join imdb_ratings as ir
+                on m.imdb_id = ir.movie_id
+                having match_score > 0
+            ) as t
+        )as t2
+        """
+        self.__execute_query(query)
+        return self.__format_rating_response(self.db_con.cursor.fetchall())

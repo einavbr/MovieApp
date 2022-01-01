@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS actors (id INT PRIMARY KEY, actor_name VARCHAR(50) NO
 ;
 CREATE TABLE IF NOT EXISTS movies_actors (movie_id INT, FOREIGN KEY(movie_id) REFERENCES movies(movie_id), actor_id INT, FOREIGN KEY(actor_id) REFERENCES actors(id))
 ;
+CREATE FULLTEXT INDEX overview_index ON movies(overview)
+;
 -- CREATE VIEW top50_actors AS
 -- 	SELECT id, popularity
 --     from actors
