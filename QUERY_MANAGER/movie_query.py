@@ -1,5 +1,4 @@
-import pymysql
-
+# Utils
 def parse_list_input(str_input):
     if len(str_input) == 0:
         return None

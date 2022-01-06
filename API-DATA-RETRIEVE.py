@@ -1,7 +1,7 @@
 from datetime import datetime
 import pymysql
 from tmdbv3api import TMDb, Genre, Movie
-from imdb_movie import IMDBMovie
+from imdb import IMDb
 
 TABLE_PATH_PREFIX = '/Users/einavb/tauProjects/DBServices/'
 CONNECTOR = pymysql.connect(
@@ -12,6 +12,30 @@ CONNECTOR = pymysql.connect(
     database='DbMysql15'
 )
 CURSOR = CONNECTOR.cursor()
+
+class IMDBMovie():  
+    def __init__(self, search):
+        """Setup up variables and initialize with data from IMDb"""
+        self.id = None
+        self.rating = None
+
+        # create an instance of the IMDb class
+        imdb = IMDb()
+        try:
+            mov = imdb.search_movie(search)[0]
+            self.id = mov.getID()
+
+            data = imdb.get_movie_main(mov.getID())['data']
+
+            self.title = data['title']
+            try:
+                self.rating = data['rating']
+            except KeyError:
+                pass
+        except IndexError:
+            # movie not found in IMDb database
+            pass
+
 
 # create an instance of the TMDb class
 tmdb = TMDb()

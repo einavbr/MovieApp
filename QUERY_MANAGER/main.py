@@ -1,8 +1,8 @@
-from rating_predictor import RatingPredictor
-from actors_predictor import ActorsPredictor
-from similarity_calculator import SimilarityCalculator
-from language_calculator import LanguageCalculator
-from cast_originality_calculator import CastOriginalityCalculator
+from EXECUTORS.rating_predictor import RatingPredictor
+from EXECUTORS.actors_predictor import ActorsPredictor
+from EXECUTORS.similarity_calculator import SimilarityCalculator
+from EXECUTORS.language_calculator import LanguageCalculator
+from EXECUTORS.cast_originality_calculator import CastOriginalityCalculator
 from movie_query import MovieQuery
 import pymysql
 

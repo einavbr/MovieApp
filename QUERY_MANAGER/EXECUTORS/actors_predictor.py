@@ -3,7 +3,7 @@ from movie_query import parse_list_input
 class ActorsPredictor():
     def __init__(self, query):
         # Handle genres input
-        genres_str = input("Which Genres will your movie be? Enter a comma seperated list: ")
+        genres_str = input("\nWhich Genres will your movie be? Enter a comma seperated list: ")
         genres = parse_list_input(genres_str)
         
         if genres is None:
