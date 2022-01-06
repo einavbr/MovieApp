@@ -1,4 +1,4 @@
-from connector import Connector
+import pymysql
 
 def parse_list_input(str_input):
     if len(str_input) == 0:
@@ -8,8 +8,9 @@ def parse_list_input(str_input):
     return lst
 
 class MovieQuery():
-    def __init__(self, db_con:Connector):
-        self.db_con = db_con
+    def __init__(self, connector):
+        self.connector = connector
+        self.cursor = connector.cursor()
 
     ###  ------------------------- Private methods -------------------------------- ###
 
@@ -70,9 +71,9 @@ class MovieQuery():
             WHERE m.movie_id in (
                 {subquery}
             )"""
-        self.db_con.cursor.execute(get_avg_rating_query)
+        self.cursor.execute(get_avg_rating_query)
         try:
-            return self.__format_rating_response(self.db_con.cursor.fetchall())
+            return self.__format_rating_response(self.cursor.fetchall())
         except TypeError:
             # print("No movies with this combination")
             return None
@@ -102,14 +103,14 @@ class MovieQuery():
     ###  ------------------------- Public methods -------------------------------- ###
 
     def execute_query(self, query, args = None):
-        self.db_con.cursor.execute(query, args)
-        self.db_con.conn.commit()
+        self.cursor.execute(query, args)
+        self.connector.commit()
 
     def rating_per_actor(self, actors):
         for actor in actors:
             query = "SELECT popularity FROM actors WHERE lower(actor_name) like %s"
-            self.db_con.cursor.execute(query, [actor])
-            this_result = self.db_con.cursor.fetchall()
+            self.cursor.execute(query, [actor])
+            this_result = self.cursor.fetchall()
             return self.__format_rating_response(this_result)
 
     def predict_rating_by_actors(self, actors):
@@ -140,7 +141,7 @@ class MovieQuery():
     def predict_rating_by_keywords(self, keywords):
         query = self.__create_keywords_query(keywords)
         self.execute_query(query)
-        return self.__format_rating_response(self.db_con.cursor.fetchall())
+        return self.__format_rating_response(self.cursor.fetchall())
 
     def predict_rating_by_actors_genres_keywords(self, actors, genres, keywords):
         actors_subquery = self.__movie_ids_by_actors_subquery(actors)
@@ -151,7 +152,7 @@ class MovieQuery():
         """
         query = self.__create_keywords_query(keywords, where_clause)
         self.execute_query(query)
-        return self.__format_rating_response(self.db_con.cursor.fetchall())
+        return self.__format_rating_response(self.cursor.fetchall())
 
     def predict_rating_by_actors_and_keywords (self, actors, keywords):
         subquery = self.__movie_ids_by_actors_subquery(actors)
@@ -160,7 +161,7 @@ class MovieQuery():
         """
         query = self.__create_keywords_query(keywords, where_clause)
         self.execute_query(query)
-        return self.__format_rating_response(self.db_con.cursor.fetchall())
+        return self.__format_rating_response(self.cursor.fetchall())
 
     def predict_rating_by_genres_and_keywords (self, genres, keywords):
         subquery = self.__movie_ids_by_genres_subquery(genres)
@@ -169,7 +170,7 @@ class MovieQuery():
         """
         query = self.__create_keywords_query(keywords, where_clause)
         self.execute_query(query)
-        return self.__format_rating_response(self.db_con.cursor.fetchall())
+        return self.__format_rating_response(self.cursor.fetchall())
     
     def predict_actors_by_genre(self, genres):
         where = self.__create_where_clause(genres, "genre")
@@ -190,7 +191,7 @@ class MovieQuery():
             limit 20
         """
         self.execute_query(query)
-        return self.db_con.cursor.fetchall()
+        return self.cursor.fetchall()
     
     def get_similar_movies(self, actors, genres, keywords):
         actors_where_clause = self.__create_where_clause(actors, "actor_name")
@@ -229,7 +230,7 @@ class MovieQuery():
             order by similarity_rating desc
         """
         self.execute_query(similarity_percentage_query)
-        return self.db_con.cursor.fetchall()
+        return self.cursor.fetchall()
     
     def find_language_by_actors(self, actors):
         # INTERSECT is not supported for MySQL, therefor using IN
@@ -254,7 +255,7 @@ class MovieQuery():
             where {where_clause}
         """
         self.execute_query(query)
-        return self.__format_language_response(self.db_con.cursor.fetchall())
+        return self.__format_language_response(self.cursor.fetchall())
     
     def calculate_cast_originality(self, actors):
         where_clause = self.__create_where_clause(actors, "actor_name")
@@ -275,7 +276,7 @@ class MovieQuery():
             where amount_relevant_actors_in_movie = {len(actors)}
         """
         self.execute_query(query)
-        response = self.db_con.cursor.fetchall()
+        response = self.cursor.fetchall()
         try:
             return f'{round(float(response[0][0]), 2)} %'
         except IndexError:

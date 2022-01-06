@@ -4,10 +4,17 @@ from similarity_calculator import SimilarityCalculator
 from language_calculator import LanguageCalculator
 from cast_originality_calculator import CastOriginalityCalculator
 from movie_query import MovieQuery
-from connector import Connector
+import pymysql
 
-db_con = Connector()
-query = MovieQuery(db_con)
+CONNECTOR = pymysql.connect(
+    host='localhost',
+    port=3305,
+    user='DbMysql15',
+    password='DbMysql15',
+    database='DbMysql15'
+)
+
+query = MovieQuery(CONNECTOR)
 
 what_to_predict = """
 Welcome to POsCript! The best app in the world for your movie POCs.
@@ -37,6 +44,6 @@ elif navigate == '5':
 elif navigate == '6':
     query_pop_view = "select * from top50_movies"
     query.execute_query(query_pop_view)
-    print(db_con.cursor.fetchall())
+    print(CONNECTOR.cursor.fetchall())
 
-db_con.close()
+CONNECTOR.close()
