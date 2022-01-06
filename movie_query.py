@@ -259,10 +259,10 @@ class MovieQuery():
     def calculate_cast_originality(self, actors):
         where_clause = self.__create_where_clause(actors, "actor_name")
         query = f"""
-            select count(*) as amount_movies
+            select (count(*) / (select * from amount_movies_in_db)) * 100 as similarity_percentage
             from (
                 select m.movie_id,
-                    count(distinct a.id) as amount_actors_in_movie
+                    count(distinct a.id) as amount_relevant_actors_in_movie
                 from actors as a
                 join movies_actors as ma
                 on ma.actor_id = a.id
@@ -271,7 +271,12 @@ class MovieQuery():
                 where {where_clause}
                 group by m.movie_id
             ) as t
-            where amount_actors_in_movie = {len(actors)}
+            cross join amount_movies_in_db
+            where amount_relevant_actors_in_movie = {len(actors)}
         """
         self.execute_query(query)
-        return self.__format_rating_response(self.db_con.cursor.fetchall())
+        response = self.db_con.cursor.fetchall()
+        try:
+            return f'{round(float(response[0][0]), 2)} %'
+        except IndexError:
+            return None

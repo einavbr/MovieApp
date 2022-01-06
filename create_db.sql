@@ -22,4 +22,6 @@ CREATE VIEW top50_movies AS
 	order by popularity desc
     limit 50
 ;
-
+CREATE VIEW amount_movies_in_db AS
+	SELECT count(distinct movie_id) as amount_movies
+    from movies
