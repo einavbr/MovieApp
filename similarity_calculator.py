@@ -2,6 +2,8 @@ from movie_query import parse_list_input
 
 class SimilarityCalculator():
     def __init__(self, query):
+        print("For Each Question below, press enter to leave the answer empty.\n")
+        
         # Handle actors input
         actors_str = input("Which actors would you like to employ? Enter a comma seperated list: ")
         actors = parse_list_input(actors_str)
