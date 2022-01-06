@@ -25,31 +25,31 @@ class MovieQuery():
         except IndexError:
             return None
 
-    def __alter_movie_ids_view_by_actors(self, actors):
+    def __movie_ids_by_actors_subquery(self, actors):
         where = self.__create_where_clause(actors, "actor_name")
         # Get a list of all movies with all these actors
-        get_movie_ids_query = "CREATE OR REPLACE VIEW actor_movie_ids AS \
-            SELECT ma.movie_id \
-            FROM actors as a \
-            JOIN movies_actors as ma \
-            ON a.id = ma.actor_id \
-            WHERE " + where + \
-            "GROUP BY ma.movie_id \
-            HAVING count(distinct ma.actor_id) >= %s"
-        self.execute_query(get_movie_ids_query, [len(actors)])
+        get_movie_ids_query = f"""
+            SELECT ma.movie_id 
+            FROM actors as a 
+            JOIN movies_actors as ma 
+            ON a.id = ma.actor_id 
+            WHERE {where} 
+            GROUP BY ma.movie_id 
+            HAVING count(distinct ma.actor_id) >= {len(actors)}"""
+        return get_movie_ids_query
     
-    def __alter_movie_ids_view_by_genres(self, genres):
+    def __movie_ids_by_genres_subquery(self, genres):
         where = self.__create_where_clause(genres, "genre")
         # Get a list of all movies with all these genres
-        get_movie_ids_query = "CREATE OR REPLACE VIEW genre_movie_ids AS \
-            SELECT mg.movie_id \
-            FROM genres as g \
-            JOIN movies_genres as mg \
-            ON g.genre_id = mg.genre_id \
-            WHERE " + where + \
-            " GROUP BY mg.movie_id \
-            HAVING count(distinct mg.genre_id) >= %s"
-        self.execute_query(get_movie_ids_query, [len(genres)])
+        get_movie_ids_query = f"""
+            SELECT mg.movie_id
+            FROM genres as g
+            JOIN movies_genres as mg
+            ON g.genre_id = mg.genre_id
+            WHERE {where}
+            GROUP BY mg.movie_id
+            HAVING count(distinct mg.genre_id) >= {len(genres)}"""
+        return get_movie_ids_query
     
     def __create_where_clause(self, lst, col_name:str):
         if lst is not None:
@@ -61,21 +61,20 @@ class MovieQuery():
         else:
             return "true"
     
-    def __get_avg_rating(self, view_name):
+    def __get_avg_rating(self, subquery):
         # Get the average imdb rating for movies with these genres
-        get_avg_rating_query = "SELECT avg(rating) as rating \
-            FROM imdb_ratings as ir \
-            JOIN movies as m \
-            ON ir.movie_id = m.imdb_id \
-            WHERE m.movie_id in ( \
-                SELECT * \
-                FROM " + view_name + \
-            " )"
+        get_avg_rating_query = f"""SELECT avg(rating) as rating
+            FROM imdb_ratings as ir
+            JOIN movies as m
+            ON ir.movie_id = m.imdb_id
+            WHERE m.movie_id in (
+                {subquery}
+            )"""
         self.db_con.cursor.execute(get_avg_rating_query)
         try:
             return self.__format_rating_response(self.db_con.cursor.fetchall())
         except TypeError:
-            print("No movies with this combination")
+            # print("No movies with this combination")
             return None
     
     def __create_keywords_query(self, keywords, where_clause = ""):
@@ -114,28 +113,28 @@ class MovieQuery():
             return self.__format_rating_response(this_result)
 
     def predict_rating_by_actors(self, actors):
-        self.__alter_movie_ids_view_by_actors(actors)
+        subquery = self.__movie_ids_by_actors_subquery(actors)
         # Get the average imdb rating for movies with these actors
-        rating = self.__get_avg_rating("actor_movie_ids")
+        rating = self.__get_avg_rating(subquery)
         return rating
 
     def predict_rating_by_genres(self, genres):
-        self.__alter_movie_ids_view_by_genres(genres)
+        subquery = self.__movie_ids_by_genres_subquery(genres)
         # Get the average imdb rating for movies with these genres
-        rating = self.__get_avg_rating("genre_movie_ids")
+        rating = self.__get_avg_rating(subquery)
         return rating
     
     def predict_rating_by_actors_and_genres(self, actors, genres):
-        self.__alter_movie_ids_view_by_actors(actors)
-        self.__alter_movie_ids_view_by_genres(genres)
-        query = """CREATE OR REPLACE VIEW movie_ids AS
-            SELECT g.movie_id
-            FROM genre_movie_ids as g
-            JOIN actor_movie_ids as a
-            ON g.movie_id = a.movie_id"""
-        self.execute_query(query)
+        actors_subquery = self.__movie_ids_by_actors_subquery(actors)
+        genres_subquery = self.__movie_ids_by_genres_subquery(genres)
+        subquery = f"""
+            SELECT movie_id
+            FROM movies
+            WHERE movie_id IN ({actors_subquery})
+                AND movie_id IN ({genres_subquery})
+        """
 
-        rating = self.__get_avg_rating("movie_ids")
+        rating = self.__get_avg_rating(subquery)
         return rating
     
     def predict_rating_by_keywords(self, keywords):
@@ -144,39 +143,29 @@ class MovieQuery():
         return self.__format_rating_response(self.db_con.cursor.fetchall())
 
     def predict_rating_by_actors_genres_keywords(self, actors, genres, keywords):
-        self.__alter_movie_ids_view_by_actors(actors)
-        self.__alter_movie_ids_view_by_genres(genres)
-        where_clause = """
-            where m.movie_id in (
-                select g.movie_id
-                from genre_movie_ids as g
-                join actor_movie_ids as a
-                on g.movie_id = a.movie_id
-            )
+        actors_subquery = self.__movie_ids_by_actors_subquery(actors)
+        genres_subquery = self.__movie_ids_by_genres_subquery(genres)
+        where_clause = f"""
+            WHERE m.movie_id IN ({actors_subquery})
+                AND m.movie_id IN ({genres_subquery})
         """
         query = self.__create_keywords_query(keywords, where_clause)
         self.execute_query(query)
         return self.__format_rating_response(self.db_con.cursor.fetchall())
 
     def predict_rating_by_actors_and_keywords (self, actors, keywords):
-        self.__alter_movie_ids_view_by_actors(actors)
-        where_clause = """
-            where m.movie_id in (
-                select movie_id
-                from actor_movie_ids
-            )
+        subquery = self.__movie_ids_by_actors_subquery(actors)
+        where_clause = f"""
+            where m.movie_id in ({subquery})
         """
         query = self.__create_keywords_query(keywords, where_clause)
         self.execute_query(query)
         return self.__format_rating_response(self.db_con.cursor.fetchall())
 
     def predict_rating_by_genres_and_keywords (self, genres, keywords):
-        self.__alter_movie_ids_view_by_genres(genres)
-        where_clause = """
-            where m.movie_id in (
-                select movie_id
-                from genre_movie_ids
-            )
+        subquery = self.__movie_ids_by_genres_subquery(genres)
+        where_clause = f"""
+            where m.movie_id in ({subquery})
         """
         query = self.__create_keywords_query(keywords, where_clause)
         self.execute_query(query)
@@ -206,7 +195,7 @@ class MovieQuery():
     def get_similar_movies(self, actors, genres, keywords):
         actors_where_clause = self.__create_where_clause(actors, "actor_name")
         genres_where_clause = self.__create_where_clause(genres, "genre")
-        query = f"""CREATE OR REPLACE VIEW similar_movies AS 
+        subquery = f"""
             select m.movie_id,
                 m.title,
                 count(distinct a.id) as amount_relevant_actors,
@@ -227,7 +216,7 @@ class MovieQuery():
             group by m.movie_id, m.title
             limit 50
         """
-        self.execute_query(query)
+        self.execute_query(subquery)
 
         # actors and genres each provide 50% of the base score, which is then multiplied by the overview_match_score
         amount_actors = len(actors) if actors is not None else "amount_relevant_actors"
@@ -236,7 +225,7 @@ class MovieQuery():
         similarity_percentage_query = f"""
             select title,
                 round(((amount_relevant_actors / {amount_actors} * 50) + (amount_relevant_genres / {amount_genres} * 50)) * {overview_match_score}, 2) as similarity_rating
-            from similar_movies
+            from ({subquery}) as t
             order by similarity_rating desc
         """
         self.execute_query(similarity_percentage_query)

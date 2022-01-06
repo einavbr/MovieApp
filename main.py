@@ -10,7 +10,7 @@ db_con = Connector()
 query = MovieQuery(db_con)
 
 what_to_predict = """
-Welcome to MovieApp! The best app in the world for your movie POCs.
+Welcome to POsCript! The best app in the world for your movie POCs.
 
 What would you like to predict today?
 1 - I have an idea for a movie and I want to predict it's rating

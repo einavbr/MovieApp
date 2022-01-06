@@ -22,19 +22,4 @@ CREATE VIEW top50_movies AS
 	order by popularity desc
     limit 50
 ;
-show full tables
-;
--- SELECT concat('DROP TABLE IF EXISTS `', table_name, '`;')
--- FROM information_schema.tables
--- WHERE table_schema = 'DbMysql15';
--- ;
--- SET FOREIGN_KEY_CHECKS = 0;
--- DROP TABLE IF EXISTS `genres`;
--- DROP TABLE IF EXISTS `movies`;
--- DROP TABLE IF EXISTS `actors`;
--- DROP TABLE IF EXISTS `movies_genres`;
--- DROP TABLE IF EXISTS `movies_actors`;
--- DROP TABLE IF EXISTS `imdb_ratings`;
--- DROP TABLE IF EXISTS `purchases`;
--- SET FOREIGN_KEY_CHECKS = 1;
 
